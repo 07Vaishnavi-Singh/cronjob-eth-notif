@@ -36,7 +36,7 @@ export const onCronjob: OnRpcRequestHandler = async ({ request }) => {
           params: [
             {
               type: 'inApp',
-              message: `Current ETH Price ${price}`,
+              message: `Current ETH Price ${price} USD.`,
             },
           ],
         });
