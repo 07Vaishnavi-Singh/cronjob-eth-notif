@@ -1,40 +1,48 @@
 import { OnRpcRequestHandler } from '@metamask/snap-types';
 
-/**
- * Get a message from the origin. For demonstration purposes only.
- *
- * @param originString - The origin string.
- * @returns A message based on the origin.
- */
+async function getPrice() {
+  const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd'); 
+  return response.text(); 
+}
+
 export const getMessage = (originString: string): string =>
   `Hello, ${originString}!`;
 
-/**
- * Handle incoming JSON-RPC requests, sent through `wallet_invokeSnap`.
- *
- * @param args - The request handler args as object.
- * @param args.origin - The origin of the request, e.g., the website that
- * invoked the snap.
- * @param args.request - A validated JSON-RPC request object.
- * @returns `null` if the request succeeded.
- * @throws If the request method is not valid for this snap.
- * @throws If the `snap_confirm` call failed.
- */
 export const onRpcRequest: OnRpcRequestHandler = ({ origin, request }) => {
   switch (request.method) {
     case 'hello':
       return wallet.request({
-        method: 'snap_confirm',
+        method: 'snap_notify',
         params: [
           {
-            prompt: getMessage(origin),
-            description:
-              'This custom confirmation is just for display purposes.',
-            textAreaContent:
-              'But you can edit the snap source code to make it do something, if you want to!',
+            type: 'inApp',
+            message: 'from RPC',
           },
         ],
       });
+    default:
+      throw new Error('Method not found.');
+  }
+};
+
+export const onCronjob: OnRpcRequestHandler = async ({ request }) => {
+  switch (request.method) {
+    case 'cronjobMethod':
+      return getPrice().then( cronjobMethod => {
+        const priceObject = JSON.parse(cronjobMethod);
+        const price = parseFloat(priceObject.ethereum.usd);
+        return wallet.request({
+          method: 'snap_notify',
+          params: [
+            {
+              type: 'inApp',
+              message: `Current ETH Price ${price}`,
+            },
+          ],
+        });
+      });
+
+
     default:
       throw new Error('Method not found.');
   }
